@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini API 密钥测试工具</title>
+    <style>
+        :root {
+            --primary: #4285f4;
+            --primary-dark: #3367d6;
+            --success: #0f9d58;
+            --warning: #f4b400;
+            --danger: #db4437;
+            --bg: #0f1117;
+            --bg-card: #1a1d27;
+            --bg-input: #252830;
+            --border: #2e3140;
+            --text: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4285f4, #ea4335, #fbbc04, #34a853);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Input Section */
+        .input-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 28px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 48px 14px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--primary);
+        }
+
+        .input-wrapper input::placeholder {
+            color: var(--text-secondary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .toggle-visibility {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .toggle-visibility:hover {
+            color: var(--text);
+        }
+
+        .btn-test {
+            padding: 14px 32px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-test:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        .btn-test:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .btn-test:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-test .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none;
+        }
+
+        .btn-test.loading .spinner {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Options */
+        .options-row {
+            display: flex;
+            gap: 20px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-item label {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .option-item select {
+            padding: 6px 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .option-item select:focus {
+            border-color: var(--primary);
+        }
+
+        .checkbox-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+            border: 1px solid;
+        }
+
+        .status-bar.show { display: flex; }
+
+        .status-bar.success {
+            background: rgba(15,157,88,0.1);
+            border-color: rgba(15,157,88,0.3);
+            color: #81c995;
+        }
+
+        .status-bar.error {
+            background: rgba(219,68,55,0.1);
+            border-color: rgba(219,68,55,0.3);
+            color: #f28b82;
+        }
+
+        .status-bar.info {
+            background: rgba(66,133,244,0.1);
+            border-color: rgba(66,133,244,0.3);
+            color: #8ab4f8;
+        }
+
+        .status-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        /* Summary Cards */
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .summary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .summary-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .summary-card .label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .summary-card.total .number { color: var(--primary); }
+        .summary-card.generate .number { color: var(--success); }
+        .summary-card.embed .number { color: var(--warning); }
+        .summary-card.other .number { color: #a142f4; }
+
+        /* Filter & Search */
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .search-box:focus {
+            border-color: var(--primary);
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        /* Models Grid */
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .model-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            transition: border-color 0.2s, transform 0.15s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .model-card .model-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        .model-card .model-id {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            font-family: 'Consolas', monospace;
+            margin-bottom: 12px;
+            word-break: break-all;
+        }
+
+        .model-card .model-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .tag {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 500;
+        }
+
+        .tag.generate {
+            background: rgba(15,157,88,0.15);
+            color: #81c995;
+        }
+
+        .tag.embed {
+            background: rgba(244,180,0,0.15);
+            color: #fdd663;
+        }
+
+        .tag.tune {
+            background: rgba(161,66,244,0.15);
+            color: #c58af9;
+        }
+
+        .tag.count {
+            background: rgba(66,133,244,0.15);
+            color: #8ab4f8;
+        }
+
+        .tag.other-method {
+            background: rgba(100,100,100,0.2);
+            color: var(--text-secondary);
+        }
+
+        .model-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-item .meta-label {
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+        }
+
+        .meta-item .meta-value {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        /* Test button on card */
+        .btn-test-model {
+            margin-top: 14px;
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-test-model:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(66,133,244,0.05);
+        }
+
+        .btn-test-model.testing {
+            color: var(--warning);
+            border-color: rgba(244,180,0,0.3);
+        }
+
+        .btn-test-model.test-success {
+            color: var(--success);
+            border-color: rgba(15,157,88,0.3);
+            background: rgba(15,157,88,0.05);
+        }
+
+        .btn-test-model.test-fail {
+            color: var(--danger);
+            border-color: rgba(219,68,55,0.3);
+            background: rgba(219,68,55,0.05);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        /* Proxy Section */
+        .proxy-section {
+            margin-top: 12px;
+        }
+
+        .proxy-toggle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .proxy-toggle:hover {
+            color: var(--text);
+        }
+
+        .proxy-inputs {
+            display: none;
+            margin-top: 10px;
+            gap: 12px;
+        }
+
+        .proxy-inputs.show {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .proxy-inputs input {
+            flex: 1;
+            min-width: 250px;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.88rem;
+            outline: none;
+            font-family: 'Consolas', monospace;
+        }
+
+        .proxy-inputs input:focus {
+            border-color: var(--primary);
+        }
+
+        .proxy-hint {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .input-group {
+                flex-direction: column;
+            }
+
+            .models-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Fade in animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .model-card {
+            animation: fadeInUp 0.3s ease forwards;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4d5a;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Gemini API 密钥测试工具</h1>
+            <p>输入你的 Google Gemini API 密钥，快速检测可用模型及其能力</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <input type="password" id="apiKey" placeholder="粘贴你的 API 密钥 (AIza...)" autocomplete="off" spellcheck="false">
+                    <button class="toggle-visibility" onclick="toggleKeyVisibility()" title="显示/隐藏密钥">👁</button>
+                </div>
+                <button class="btn-test" id="btnTest" onclick="startTest()">
+                    <span class="spinner"></span>
+                    <span class="btn-text">开始测试</span>
+                </button>
+            </div>
+
+            <!-- Proxy -->
+            <div class="proxy-section">
+                <div class="proxy-toggle" onclick="toggleProxy()">
+                    <span id="proxyArrow">▶</span> 自定义 API 地址 (代理/反代)
+                </div>
+                <div class="proxy-inputs" id="proxyInputs">
+                    <input type="text" id="baseUrl" placeholder="自定义 Base URL，例如: https://your-proxy.com/v1beta">
+                    <p class="proxy-hint">默认: https://generativelanguage.googleapis.com/v1beta &nbsp;|&nbsp; 留空使用官方地址</p>
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="options-row">
+                <div class="option-item">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="testCall" checked>
+                    </div>
+                    <label for="testCall">逐一测试模型可用性</label>
+                </div>
+                <div class="option-item">
+                    <label>API 版本:</label>
+                    <select id="apiVersion">
+                        <option value="v1beta" selected>v1beta (推荐)</option>
+                        <option value="v1">v1 (稳定版)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar" id="statusBar">
+            <span class="status-icon" id="statusIcon"></span>
+            <span id="statusText"></span>
+        </div>
+
+        <!-- Results -->
+        <div class="results-section" id="resultsSection">
+            <!-- Summary -->
+            <div class="summary" id="summary"></div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <input type="text" class="search-box" id="searchBox" placeholder="搜索模型名称或 ID..." oninput="filterModels()">
+                <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">全部</button>
+                <button class="filter-btn" data-filter="generateContent" onclick="setFilter('generateContent', this)">文本生成</button>
+                <button class="filter-btn" data-filter="embedContent" onclick="setFilter('embedContent', this)">嵌入</button>
+            </div>
+
+            <!-- Models Grid -->
+            <div class="models-grid" id="modelsGrid"></div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="icon">🔍</div>
+                <h3>没有找到匹配的模型</h3>
+                <p>尝试调整搜索关键词或筛选条件</p>
+            </div>
+        </div>
+
+        <!-- Initial Empty State -->
+        <div class="empty-state" id="initialState">
+            <div class="icon">🔑</div>
+            <h3>输入 API 密钥开始测试</h3>
+            <p>支持 Google AI Studio 和 Vertex AI 的 Gemini API 密钥</p>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let allModels = [];
+        let currentFilter = 'all';
+        let currentApiKey = '';
+        let currentBaseUrl = '';
+
+        // Toggle key visibility
+        function toggleKeyVisibility() {
+            const input = document.getElementById('apiKey');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Toggle proxy section
+        function toggleProxy() {
+            const inputs = document.getElementById('proxyInputs');
+            const arrow = document.getElementById('proxyArrow');
+            inputs.classList.toggle('show');
+            arrow.textContent = inputs.classList.contains('show') ? '▼' : '▶';
+        }
+
+        // Get base URL
+        function getBaseUrl() {
+            const customUrl = document.getElementById('baseUrl').value.trim();
+            const version = document.getElementById('apiVersion').value;
+            if (customUrl) {
+                // Remove trailing slash
+                return customUrl.replace(/\/+$/, '');
+            }
+            return `https://generativelanguage.googleapis.com/${version}`;
+        }
+
+        // Show status
+        function showStatus(type, icon, text) {
+            const bar = document.getElementById('statusBar');
+            bar.className = `status-bar show ${type}`;
+            document.getElementById('statusIcon').textContent = icon;
+            document.getElementById('statusText').textContent = text;
+        }
+
+        // Hide status
+        function hideStatus() {
+            document.getElementById('statusBar').className = 'status-bar';
+        }
+
+        // Start test
+        async function startTest() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                showStatus('error', '⚠️', '请先输入 API 密钥');
+                return;
+            }
+
+            currentApiKey = apiKey;
+            currentBaseUrl = getBaseUrl();
+
+            const btn = document.getElementById('btnTest');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            btn.querySelector('.btn-text').textContent = '测试中...';
+
+            document.getElementById('initialState').style.display = 'none';
+            showStatus('info', '⏳', '正在获取模型列表...');
+
+            try {
+                allModels = await fetchModels();
+
+                if (allModels.length === 0) {
+                    showStatus('error', '❌', 'API 密钥有效，但未找到任何可用模型');
+                    document.getElementById('resultsSection').classList.remove('show');
+                    return;
+                }
+
+                showStatus('success', '✅', `密钥有效！共发现 ${allModels.length} 个模型`);
+                renderSummary();
+                renderModels();
+                document.getElementById('resultsSection').classList.add('show');
+
+                // Test each model if checkbox is checked
+                const testCall = document.getElementById('testCall').checked;
+                if (testCall) {
+                    await testAllModels();
+                }
+
+            } catch (err) {
+                handleFetchError(err);
+                document.getElementById('resultsSection').classList.remove('show');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                btn.querySelector('.btn-text').textContent = '开始测试';
+            }
+        }
+
+        // Fetch all models (with pagination)
+        async function fetchModels() {
+            let models = [];
+            let pageToken = '';
+            let page = 0;
+
+            do {
+                const url = `${currentBaseUrl}/models?key=${currentApiKey}&pageSize=1000` +
+                    (pageToken ? `&pageToken=${pageToken}` : '');
+
+                const resp = await fetch(url);
+
+                if (!resp.ok) {
+                    const body = await resp.json().catch(() => ({}));
+                    const err = new Error(body?.error?.message || `HTTP ${resp.status}`);
+                    err.status = resp.status;
+                    err.body = body;
+                    throw err;
+                }
+
+                const data = await resp.json();
+                if (data.models) {
+                    models = models.concat(data.models);
+                }
+                pageToken = data.nextPageToken || '';
+                page++;
+
+                if (page > 10) break; // safety
+            } while (pageToken);
+
+            // Sort: newest / most popular first
+            models.sort((a, b) => {
+                const aName = a.name || '';
+                const bName = b.name || '';
+                // Gemini models first
+                const aIsGemini = aName.includes('gemini') ? 1 : 0;
+                const bIsGemini = bName.includes('gemini') ? 1 : 0;
+                if (aIsGemini !== bIsGemini) return bIsGemini - aIsGemini;
+                return aName.localeCompare(bName);
+            });
+
+            return models;
+        }
+
+        // Handle fetch errors
+        function handleFetchError(err) {
+            if (err.status === 400) {
+                showStatus('error', '❌', `请求错误: ${err.message}`);
+            } else if (err.status === 401 || err.status === 403) {
+                showStatus('error', '❌', `密钥无效或已过期: ${err.message}`);
+            } else if (err.status === 429) {
+                showStatus('error', '⚠️', `请求频率超限，请稍后再试: ${err.message}`);
+            } else if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+                showStatus('error', '❌', '网络连接失败，请检查网络或代理设置');
+            } else {
+                showStatus('error', '❌', `测试失败: ${err.message}`);
+            }
+        }
+
+        // Render summary cards
+        function renderSummary() {
+            const total = allModels.length;
+            let generateCount = 0;
+            let embedCount = 0;
+            let otherCount = 0;
+
+            allModels.forEach(m => {
+                const methods = m.supportedGenerationMethods || [];
+                if (methods.includes('generateContent')) generateCount++;
+                if (methods.includes('embedContent') || methods.includes('embedText')) embedCount++;
+                if (!methods.includes('generateContent') && !methods.includes('embedContent') && !methods.includes('embedText')) otherCount++;
+            });
+
+            document.getElementById('summary').innerHTML = `
+                <div class="summary-card total">
+                    <div class="number">${total}</div>
+                    <div class="label">模型总数</div>
+                </div>
+                <div class="summary-card generate">
+                    <div class="number">${generateCount}</div>
+                    <div class="label">支持文本生成</div>
+                </div>
+                <div class="summary-card embed">
+                    <div class="number">${embedCount}</div>
+                    <div class="label">支持嵌入</div>
+                </div>
+                <div class="summary-card other">
+                    <div class="number">${otherCount}</div>
+                    <div class="label">其他类型</div>
+                </div>
+            `;
+        }
+
+        // Render model cards
+        function renderModels() {
+            const search = document.getElementById('searchBox').value.toLowerCase();
+            const grid = document.getElementById('modelsGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            let filtered = allModels;
+
+            // Filter by method
+            if (currentFilter === 'generateContent') {
+                filtered = filtered.filter(m =>
+                    (m.supportedGenerationMethods || []).includes('generateContent'));
+            } else if (currentFilter === 'embedContent') {
+                filtered = filtered.filter(m => {
+                    const methods = m.supportedGenerationMethods || [];
+                    return methods.includes('embedContent') || methods.includes('embedText');
+                });
+            }
+
+            // Filter by search
+            if (search) {
+                filtered = filtered.filter(m =>
+                    (m.displayName || '').toLowerCase().includes(search) ||
+                    (m.name || '').toLowerCase().includes(search) ||
+                    (m.description || '').toLowerCase().includes(search)
+                );
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            grid.innerHTML = filtered.map((m, idx) => {
+                const name = m.displayName || m.name?.replace('models/', '') || 'Unknown';
+                const id = m.name || '';
+                const desc = m.description || '暂无描述';
+                const methods = m.supportedGenerationMethods || [];
+
+                const tags = methods.map(method => {
+                    const tagMap = {
+                        'generateContent': { cls: 'generate', label: '文本生成' },
+                        'embedContent': { cls: 'embed', label: '嵌入' },
+                        'embedText': { cls: 'embed', label: '文本嵌入' },
+                        'countTokens': { cls: 'count', label: 'Token 计数' },
+                        'createTunedModel': { cls: 'tune', label: '微调' },
+                        'createCachedContent': { cls: 'count', label: '缓存' },
+                        'batchEmbedContents': { cls: 'embed', label: '批量嵌入' },
+                        'batchEmbedText': { cls: 'embed', label: '批量文本嵌入' },
+                    };
+                    const info = tagMap[method] || { cls: 'other-method', label: method };
+                    return `<span class="tag ${info.cls}">${info.label}</span>`;
+                }).join('');
+
+                const inputLimit = m.inputTokenLimit ? formatNumber(m.inputTokenLimit) : '-';
+                const outputLimit = m.outputTokenLimit ? formatNumber(m.outputTokenLimit) : '-';
+                const temp = m.temperature != null ? m.temperature : '-';
+                const topP = m.topP != null ? m.topP : '-';
+
+                const canGenerate = methods.includes('generateContent');
+                const canEmbed = methods.includes('embedContent') || methods.includes('embedText');
+
+                let testBtnHtml = '';
+                if (canGenerate || canEmbed) {
+                    testBtnHtml = `<button class="btn-test-model" data-model="${id}" data-type="${canGenerate ? 'generate' : 'embed'}" onclick="testSingleModel(this)">
+                        测试此模型
+                    </button>`;
+                }
+
+                return `
+                    <div class="model-card" style="animation-delay: ${idx * 0.03}s">
+                        <div class="model-name">${escapeHtml(name)}</div>
+                        <div class="model-id">${escapeHtml(id)}</div>
+                        <div class="model-desc">${escapeHtml(desc)}</div>
+                        <div class="tags">${tags}</div>
+                        <div class="model-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">输入上限</span>
+                                <span class="meta-value">${inputLimit} tokens</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">输出上限</span>
+                                <span class="meta-value">${outputLimit} tokens</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">温度</span>
+                                <span class="meta-value">${temp}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Top P</span>
+                                <span class="meta-value">${topP}</span>
+                            </div>
+                        </div>
+                        ${testBtnHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Test a single model
+        async function testSingleModel(btn) {
+            const model = btn.dataset.model;
+            const type = btn.dataset.type;
+
+            btn.className = 'btn-test-model testing';
+            btn.textContent = '测试中...';
+
+            try {
+                if (type === 'generate') {
+                    const url = `${currentBaseUrl}/${model}:generateContent?key=${currentApiKey}`;
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: 'Hello, respond with just "OK".' }] }],
+                            generationConfig: { maxOutputTokens: 10 }
+                        })
+                    });
+
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '(空响应)';
+                        btn.className = 'btn-test-model test-success';
+                        btn.textContent = `可用 - 响应: "${text.substring(0, 30)}"`;
+                    } else {
+                        const errData = await resp.json().catch(() => ({}));
+                        btn.className = 'btn-test-model test-fail';
+                        btn.textContent = `不可用 (${resp.status}): ${errData?.error?.message?.substring(0, 50) || '未知错误'}`;
+                    }
+                } else {
+                    // Embed test
+                    const isEmbedText = !allModels.find(m => m.name === model)?.supportedGenerationMethods?.includes('embedContent');
+                    let url, body;
+
+                    if (isEmbedText) {
+                        url = `${currentBaseUrl}/${model}:embedText?key=${currentApiKey}`;
+                        body = JSON.stringify({ text: 'Hello' });
+                    } else {
+                        url = `${currentBaseUrl}/${model}:embedContent?key=${currentApiKey}`;
+                        body = JSON.stringify({
+                            content: { parts: [{ text: 'Hello' }] }
+                        });
+                    }
+
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body
+                    });
+
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        const dim = data?.embedding?.values?.length || data?.embedding?.value?.length || '?';
+                        btn.className = 'btn-test-model test-success';
+                        btn.textContent = `可用 - 维度: ${dim}`;
+                    } else {
+                        const errData = await resp.json().catch(() => ({}));
+                        btn.className = 'btn-test-model test-fail';
+                        btn.textContent = `不可用 (${resp.status}): ${errData?.error?.message?.substring(0, 50) || '未知错误'}`;
+                    }
+                }
+            } catch (err) {
+                btn.className = 'btn-test-model test-fail';
+                btn.textContent = `网络错误: ${err.message.substring(0, 40)}`;
+            }
+        }
+
+        // Test all models automatically
+        async function testAllModels() {
+            const buttons = document.querySelectorAll('.btn-test-model');
+            // Test in batches of 5 to avoid rate limiting
+            const batchSize = 5;
+
+            for (let i = 0; i < buttons.length; i += batchSize) {
+                const batch = Array.from(buttons).slice(i, i + batchSize);
+                await Promise.all(batch.map(btn => testSingleModel(btn)));
+
+                // Small delay between batches
+                if (i + batchSize < buttons.length) {
+                    await new Promise(r => setTimeout(r, 300));
+                }
+            }
+
+            // Update status with results
+            const successCount = document.querySelectorAll('.btn-test-model.test-success').length;
+            const failCount = document.querySelectorAll('.btn-test-model.test-fail').length;
+            const totalTested = successCount + failCount;
+
+            showStatus('success', '✅',
+                `测试完成！${allModels.length} 个模型中，${totalTested} 个已测试: ${successCount} 个可用, ${failCount} 个不可用`);
+        }
+
+        // Filter models
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderModels();
+        }
+
+        function filterModels() {
+            renderModels();
+        }
+
+        // Helpers
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
+            return num.toString();
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Enter key support
+        document.getElementById('apiKey').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') startTest();
+        });
+    </script>
+</body>
+</html>
