@@ -588,6 +588,117 @@
             animation: fadeInUp 0.3s ease forwards;
         }
 
+        /* Chat / Prompt Area */
+        .chat-area {
+            margin-top: 14px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 9px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.84rem;
+            outline: none;
+            resize: none;
+            font-family: inherit;
+            min-height: 38px;
+            max-height: 100px;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .btn-send {
+            padding: 9px 16px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+            white-space: nowrap;
+            align-self: flex-end;
+        }
+
+        .btn-send:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .chat-response {
+            margin-top: 10px;
+            padding: 12px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.84rem;
+            line-height: 1.6;
+            color: var(--text);
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .chat-response.show {
+            display: block;
+        }
+
+        .chat-response.loading {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .chat-response.error {
+            color: #f28b82;
+            border-color: rgba(219,68,55,0.3);
+            background: rgba(219,68,55,0.05);
+        }
+
+        .chat-response .response-label {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-style: normal;
+        }
+
+        .chat-response .response-text {
+            font-style: normal;
+        }
+
+        .chat-response .response-meta {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-style: normal;
+        }
+
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -962,6 +1073,21 @@
                     </button>`;
                 }
 
+                // 对话输入区 (仅限支持 generateContent 的模型)
+                let chatHtml = '';
+                if (canGenerate) {
+                    const safeId = id.replace(/[^a-zA-Z0-9-]/g, '_');
+                    chatHtml = `
+                        <div class="chat-area">
+                            <div class="chat-input-row">
+                                <textarea class="chat-input" id="input_${safeId}" placeholder="输入内容与模型对话..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendPrompt('${id}','${safeId}')}"></textarea>
+                                <button class="btn-send" id="sendbtn_${safeId}" onclick="sendPrompt('${id}','${safeId}')">发送</button>
+                            </div>
+                            <div class="chat-response" id="resp_${safeId}"></div>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div class="model-card" style="animation-delay: ${idx * 0.03}s">
                         <div class="model-name">${escapeHtml(name)}</div>
@@ -987,6 +1113,7 @@
                             </div>
                         </div>
                         ${testBtnHtml}
+                        ${chatHtml}
                     </div>
                 `;
             }).join('');
@@ -1057,6 +1184,72 @@
             } catch (err) {
                 btn.className = 'btn-test-model test-fail';
                 btn.textContent = `网络错误: ${err.message.substring(0, 40)}`;
+            }
+        }
+
+        // Send a custom prompt to a model
+        async function sendPrompt(modelId, safeId) {
+            const input = document.getElementById(`input_${safeId}`);
+            const respDiv = document.getElementById(`resp_${safeId}`);
+            const sendBtn = document.getElementById(`sendbtn_${safeId}`);
+            const prompt = input.value.trim();
+
+            if (!prompt) return;
+            if (!currentApiKey) {
+                respDiv.className = 'chat-response show error';
+                respDiv.innerHTML = '请先在顶部输入 API 密钥并点击"开始测试"';
+                return;
+            }
+
+            // Show loading
+            sendBtn.disabled = true;
+            sendBtn.textContent = '请求中...';
+            respDiv.className = 'chat-response show loading';
+            respDiv.innerHTML = '<span class="response-label">模型响应中...</span>⏳ 正在等待回复...';
+
+            const t0 = performance.now();
+
+            try {
+                const url = `${currentBaseUrl}/${modelId}:generateContent?key=${currentApiKey}`;
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                    })
+                });
+
+                const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const candidate = data?.candidates?.[0];
+                    const text = candidate?.content?.parts?.map(p => p.text || '').join('') || '(空响应)';
+                    const finishReason = candidate?.finishReason || '';
+                    const tokenInfo = data?.usageMetadata;
+
+                    let metaHtml = `耗时 ${elapsed}s`;
+                    if (tokenInfo) {
+                        metaHtml += ` · 输入 ${tokenInfo.promptTokenCount || '?'} tokens · 输出 ${tokenInfo.candidatesTokenCount || tokenInfo.totalTokenCount || '?'} tokens`;
+                    }
+                    if (finishReason && finishReason !== 'STOP') {
+                        metaHtml += ` · 停止原因: ${finishReason}`;
+                    }
+
+                    respDiv.className = 'chat-response show';
+                    respDiv.innerHTML = `<span class="response-label">模型响应:</span><span class="response-text">${escapeHtml(text)}</span><span class="response-meta">${metaHtml}</span>`;
+                } else {
+                    const errData = await resp.json().catch(() => ({}));
+                    const errMsg = errData?.error?.message || `HTTP ${resp.status}`;
+                    respDiv.className = 'chat-response show error';
+                    respDiv.innerHTML = `<span class="response-label">请求失败 (${resp.status}):</span><span class="response-text">${escapeHtml(errMsg)}</span><span class="response-meta">耗时 ${elapsed}s</span>`;
+                }
+            } catch (err) {
+                respDiv.className = 'chat-response show error';
+                respDiv.innerHTML = `<span class="response-label">网络错误:</span><span class="response-text">${escapeHtml(err.message)}</span>`;
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '发送';
             }
         }
 
