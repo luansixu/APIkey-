@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini API 密钥测试工具</title>
+    <title>AI API 密钥全能测试工具</title>
     <style>
         :root {
             --primary: #4285f4;
@@ -724,21 +724,417 @@
         .results-section.show {
             display: block;
         }
+
+        /* ─── Manual Provider Selector ─── */
+        .manual-provider-selector {
+            margin-top: 24px; padding: 24px;
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+        }
+        .manual-provider-selector h3 { margin: 0 0 8px; font-size: 1.1rem; }
+        .manual-provider-selector p { margin: 0 0 16px; color: var(--text-secondary); font-size: 0.9rem; }
+        .provider-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px; margin-bottom: 16px;
+        }
+        .provider-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 12px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; color: var(--text-primary); cursor: pointer; font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .provider-btn:hover {
+            background: rgba(99,102,241,0.15); border-color: var(--primary); transform: translateY(-1px);
+        }
+        .provider-btn .p-icon { font-size: 1.2rem; }
+        .provider-btn .p-name { font-weight: 600; }
+        .provider-btn .p-url { font-size: 0.72rem; color: var(--text-secondary); word-break: break-all; }
+        .custom-url-row {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .custom-url-row input {
+            flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem;
+        }
+        .custom-url-row .btn-primary {
+            padding: 10px 20px; border-radius: 8px; border: none;
+            background: var(--primary); color: #fff; font-weight: 600; cursor: pointer;
+            white-space: nowrap;
+        }
+        .custom-url-row .btn-primary:hover { opacity: 0.9; }
+
+        /* ─── Account Diagnosis ─── */
+        .diag-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .diag-item:last-child { border-bottom: none; }
+        .diag-icon { font-size: 1.2rem; min-width: 28px; text-align: center; }
+        .diag-label { font-weight: 600; color: var(--text-primary); min-width: 100px; }
+        .diag-value { color: var(--text-secondary); }
+        .diag-hint { color: #f59e0b; font-size: 0.85rem; margin-top: 2px; }
+        .diag-ok .diag-icon { color: #22c55e; }
+        .diag-warn .diag-icon { color: #f59e0b; }
+        .diag-fail .diag-icon { color: #ef4444; }
+        .diag-info .diag-icon { color: #60a5fa; }
+        .error-group { margin-top: 12px; padding: 12px 16px; background: rgba(239,68,68,0.08); border-radius: 10px; border: 1px solid rgba(239,68,68,0.15); }
+        .error-group h4 { margin: 0 0 8px; color: #f87171; font-size: 0.9rem; }
+        .error-group-item { display: flex; gap: 8px; padding: 4px 0; font-size: 0.85rem; }
+        .error-group-reason { color: var(--text-primary); font-weight: 500; min-width: 180px; }
+        .error-group-models { color: var(--text-secondary); }
+
+        /* ─── Quota Analysis Section ─── */
+        .quota-section {
+            margin-top: 32px;
+            display: none;
+        }
+
+        .quota-section.show {
+            display: block;
+        }
+
+        .quota-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .quota-header h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a142f4, #ea4335, #fbbc04);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .quota-header p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-quota {
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #a142f4, #7b1fa2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-quota:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        .btn-quota:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .btn-quota:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-quota .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none;
+        }
+
+        .btn-quota.loading .spinner {
+            display: inline-block;
+        }
+
+        /* Quota Table */
+        .quota-table-wrapper {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-card);
+        }
+
+        .quota-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            min-width: 720px;
+        }
+
+        .quota-table thead {
+            background: rgba(66, 133, 244, 0.08);
+        }
+
+        .quota-table th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            font-size: 0.82rem;
+        }
+
+        .quota-table th.num {
+            text-align: right;
+        }
+
+        .quota-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(46, 49, 64, 0.5);
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .quota-table td.num {
+            text-align: right;
+            font-family: 'Consolas', monospace;
+            font-weight: 500;
+        }
+
+        .quota-table tbody tr:hover {
+            background: rgba(66, 133, 244, 0.04);
+        }
+
+        .quota-table .rank-medal {
+            font-size: 1.1rem;
+            min-width: 28px;
+            display: inline-block;
+        }
+
+        .quota-table .rank-num {
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+        }
+
+        .quota-table .model-name-cell {
+            font-weight: 600;
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .quota-table .daily-bar {
+            display: inline-block;
+            height: 8px;
+            border-radius: 4px;
+            margin-right: 8px;
+            vertical-align: middle;
+            transition: width 0.4s ease;
+        }
+
+        .quota-table .top1 { color: #fdd663; }
+        .quota-table .top2 { color: #c0c0c0; }
+        .quota-table .top3 { color: #cd7f32; }
+
+        .quota-source {
+            font-size: 0.72rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: rgba(161, 66, 244, 0.12);
+            color: #c58af9;
+        }
+
+        .quota-source.api {
+            background: rgba(15, 157, 88, 0.12);
+            color: #81c995;
+        }
+
+        /* Token Calculator */
+        .token-calculator {
+            margin-top: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+        }
+
+        .token-calculator h3 {
+            font-size: 1.05rem;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .calc-input-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .calc-input-row input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: 'Consolas', monospace;
+            outline: none;
+        }
+
+        .calc-input-row input:focus {
+            border-color: #a142f4;
+        }
+
+        .calc-input-row input::placeholder {
+            color: var(--text-secondary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .btn-calc {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #a142f4, #7b1fa2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-calc:hover {
+            opacity: 0.9;
+        }
+
+        .calc-presets {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .calc-preset {
+            padding: 5px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .calc-preset:hover {
+            border-color: #a142f4;
+            color: #c58af9;
+        }
+
+        .calc-results {
+            margin-top: 18px;
+            display: none;
+        }
+
+        .calc-results.show {
+            display: block;
+        }
+
+        .calc-result-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .calc-result-table th {
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.78rem;
+        }
+
+        .calc-result-table th.num {
+            text-align: right;
+        }
+
+        .calc-result-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(46, 49, 64, 0.4);
+        }
+
+        .calc-result-table td.num {
+            text-align: right;
+            font-family: 'Consolas', monospace;
+        }
+
+        .calc-result-table .time-fast {
+            color: #81c995;
+            font-weight: 600;
+        }
+
+        .calc-result-table .time-medium {
+            color: var(--text);
+        }
+
+        .calc-result-table .time-slow {
+            color: #fdd663;
+        }
+
+        .calc-result-table .time-very-slow {
+            color: #f28b82;
+        }
+
+        .quota-note {
+            margin-top: 16px;
+            padding: 14px 18px;
+            background: rgba(161, 66, 244, 0.06);
+            border: 1px solid rgba(161, 66, 244, 0.15);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .quota-note strong {
+            color: var(--text);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>Gemini API 密钥测试工具</h1>
-            <p>输入你的 Google Gemini API 密钥，快速检测可用模型及其能力</p>
+            <h1>AI API 密钥全能测试工具</h1>
+            <p>粘贴任意 API 密钥，自动识别服务商 · 检测可用模型 · 分析配额吞吐量</p>
+        </div>
+
+        <!-- Proxy Mode Banner -->
+        <div id="proxyBanner" style="display:none; background:linear-gradient(135deg,#1a3a2a,#1a2a3a); border:1px solid #2d6a4f; border-radius:var(--radius); padding:12px 20px; margin-bottom:16px; font-size:0.9rem; color:#a8dadc;">
+            <span style="margin-right:6px;">📡</span>
+            <strong style="color:#52b788;">代理模式已启用</strong>
+            <span style="margin-left:8px; color:#9aa0a6;">所有 API 请求通过服务端中转，已绕过浏览器 CORS 限制</span>
+        </div>
+        <div id="directBanner" style="display:none; background:linear-gradient(135deg,#3a2a1a,#2a1a1a); border:1px solid #6a4a2d; border-radius:var(--radius); padding:12px 20px; margin-bottom:16px; font-size:0.9rem; color:#f4a261;">
+            <span style="margin-right:6px;">⚠️</span>
+            <strong>直连模式</strong>
+            <span style="margin-left:8px; color:#9aa0a6;">部分 API 可能因 CORS 限制无法访问。如遇问题，请运行</span>
+            <code style="background:#252830; padding:2px 8px; border-radius:4px; color:#81b29a; font-size:0.85rem;">py gemini_test.py --web</code>
         </div>
 
         <!-- Input Section -->
         <div class="input-section">
             <div class="input-group">
                 <div class="input-wrapper">
-                    <input type="password" id="apiKey" placeholder="粘贴你的 API 密钥 (AIza...)" autocomplete="off" spellcheck="false">
+                    <input type="password" id="apiKey" placeholder="粘贴任意 API 密钥 (AIza... / sk-... / gsk_... / xai-...)" autocomplete="off" spellcheck="false">
                     <button class="toggle-visibility" onclick="toggleKeyVisibility()" title="显示/隐藏密钥">👁</button>
                 </div>
                 <button class="btn-test" id="btnTest" onclick="startTest()">
@@ -753,8 +1149,8 @@
                     <span id="proxyArrow">▶</span> 自定义 API 地址 (代理/反代)
                 </div>
                 <div class="proxy-inputs" id="proxyInputs">
-                    <input type="text" id="baseUrl" placeholder="自定义 Base URL，例如: https://your-proxy.com/v1beta">
-                    <p class="proxy-hint">默认: https://generativelanguage.googleapis.com/v1beta &nbsp;|&nbsp; 留空使用官方地址</p>
+                    <input type="text" id="baseUrl" placeholder="自定义 Base URL (留空自动识别)，例如: https://api.xxx.com/v1">
+                    <p class="proxy-hint">留空 = 自动识别服务商地址 &nbsp;|&nbsp; 支持 Gemini / OpenAI / 硅基流动 / DeepSeek 等</p>
                 </div>
             </div>
 
@@ -806,11 +1202,103 @@
             </div>
         </div>
 
+        <!-- Manual Provider Selector (shown when auto-detect fails) -->
+        <div class="manual-provider-selector" id="manualProviderSelector" style="display:none">
+            <h3>🔧 手动选择服务商</h3>
+            <p>自动探测未能匹配，请选择你的 API 服务商:</p>
+            <div class="provider-grid" id="providerGrid"></div>
+            <div class="custom-url-row">
+                <input type="text" id="manualUrlInput" placeholder="或输入自定义 API 地址 (如 https://api.xxx.com/v1)">
+                <button class="btn-primary" onclick="useManualUrl()">使用此地址</button>
+            </div>
+        </div>
+
+        <!-- Account Diagnosis Section -->
+        <div class="quota-section" id="accountSection" style="display:none">
+            <div class="quota-header">
+                <div>
+                    <h2>💳 账户状态诊断</h2>
+                    <p id="accountDesc">查询账户余额与密钥状态</p>
+                </div>
+            </div>
+            <div id="accountContent" style="padding:0 24px 24px"></div>
+        </div>
+
+        <!-- Quota Analysis Section -->
+        <div class="quota-section" id="quotaSection">
+            <div class="quota-header">
+                <div>
+                    <h2>📊 模型配额与吞吐量分析</h2>
+                    <p>检测各可用模型的速率限制，帮助选择最适合大量 Token 需求的模型</p>
+                </div>
+                <button class="btn-quota" id="btnQuota" onclick="startQuotaAnalysis()">
+                    <span class="spinner"></span>
+                    <span class="btn-text">开始配额分析</span>
+                </button>
+            </div>
+
+            <!-- Quota Table -->
+            <div class="quota-table-wrapper" id="quotaTableWrapper" style="display:none;">
+                <table class="quota-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">排名</th>
+                            <th>模型名称</th>
+                            <th class="num">RPM</th>
+                            <th class="num">TPM</th>
+                            <th class="num">RPD</th>
+                            <th class="num">输出/请求</th>
+                            <th class="num">每日最大吞吐</th>
+                            <th>来源</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quotaTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Token Calculator -->
+            <div class="token-calculator" id="tokenCalculator" style="display:none;">
+                <h3>🧮 Token 需求计算器</h3>
+                <div class="calc-input-row">
+                    <input type="text" id="tokenDemand" placeholder="输入你需要处理的总 Token 数量 (例: 10000000 或 10M)" autocomplete="off">
+                    <button class="btn-calc" onclick="calculateTokenDemand()">计算</button>
+                </div>
+                <div class="calc-presets">
+                    <span class="calc-preset" onclick="setTokenPreset(100000)">100K</span>
+                    <span class="calc-preset" onclick="setTokenPreset(1000000)">1M</span>
+                    <span class="calc-preset" onclick="setTokenPreset(10000000)">10M</span>
+                    <span class="calc-preset" onclick="setTokenPreset(100000000)">100M</span>
+                    <span class="calc-preset" onclick="setTokenPreset(1000000000)">1B</span>
+                </div>
+                <div class="calc-results" id="calcResults">
+                    <table class="calc-result-table">
+                        <thead>
+                            <tr>
+                                <th>模型名称</th>
+                                <th class="num">每日吞吐</th>
+                                <th class="num">预计耗时</th>
+                                <th class="num">所需请求数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calcResultBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="quota-note" id="quotaNote" style="display:none;">
+                <strong>📌 说明:</strong><br>
+                • <strong>RPM</strong> = 每分钟请求数, <strong>TPM</strong> = 每分钟Token数, <strong>RPD</strong> = 每日请求数<br>
+                • <strong>每日最大吞吐</strong> = min(RPD × 单次最大输出, TPM × 1440分钟)<br>
+                • 上表数据优先取自 API 响应头 (⚡ 标识)，其余为 Google 官方文档免费层参考值<br>
+                • <strong>付费账户 (Pay-as-you-go)</strong> 限额通常高数百倍，且无每日请求限制
+            </div>
+        </div>
+
         <!-- Initial Empty State -->
         <div class="empty-state" id="initialState">
             <div class="icon">🔑</div>
-            <h3>输入 API 密钥开始测试</h3>
-            <p>支持 Google AI Studio 和 Vertex AI 的 Gemini API 密钥</p>
+            <h3>粘贴 API 密钥开始测试</h3>
+            <p>支持 Gemini / OpenAI / 硅基流动 / DeepSeek / Moonshot / 智谱 / Groq / xAI 等平台</p>
         </div>
     </div>
 
@@ -820,6 +1308,168 @@
         let currentFilter = 'all';
         let currentApiKey = '';
         let currentBaseUrl = '';
+        let currentFormat = 'gemini';  // 'gemini' or 'openai'
+        let currentProvider = null;
+
+        // ─── CORS 代理模式 ───
+        // 当页面通过服务器提供时 (本地 py gemini_test.py --web 或 Vercel 部署)，
+        // 所有 API 请求自动通过代理中转，绕过浏览器 CORS 限制。
+        // file:// 协议 = 直接打开 HTML 文件，无代理可用
+        const USE_PROXY = window.location.protocol !== 'file:';
+
+        function apiFetch(url, options = {}) {
+            if (USE_PROXY) {
+                const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+                return fetch(proxyUrl, options);
+            }
+            return fetch(url, options);
+        }
+
+        // 显示代理模式状态
+        document.addEventListener('DOMContentLoaded', () => {
+            if (USE_PROXY) {
+                document.getElementById('proxyBanner').style.display = 'block';
+            } else {
+                document.getElementById('directBanner').style.display = 'block';
+            }
+        });
+
+        // ─── Provider Auto-Detection ───
+        const PROVIDER_BY_PREFIX = [
+            {prefix:'AIza',    name:'Google Gemini',    icon:'🔵', base_url:'https://generativelanguage.googleapis.com/v1beta', format:'gemini'},
+            {prefix:'sk-ant-', name:'Anthropic Claude', icon:'🟤', base_url:'https://api.anthropic.com/v1',  format:'anthropic'},
+            {prefix:'AKID',    name:'腾讯云',            icon:'🐧', base_url:'',  format:'tencent_secret'},
+            {prefix:'gsk_',    name:'Groq',             icon:'🟠', base_url:'https://api.groq.com/openai/v1', format:'openai'},
+            {prefix:'xai-',    name:'xAI (Grok)',       icon:'⚪', base_url:'https://api.x.ai/v1',           format:'openai'},
+        ];
+        const PROBE_LIST = [
+            {name:'硅基流动',   icon:'🔷', base_url:'https://api.siliconflow.cn/v1',   format:'openai'},
+            {name:'DeepSeek',  icon:'🔹', base_url:'https://api.deepseek.com',         format:'openai'},
+            {name:'OpenAI',    icon:'🟢', base_url:'https://api.openai.com/v1',        format:'openai'},
+            {name:'腾讯云混元',  icon:'🐧', base_url:'https://api.hunyuan.cloud.tencent.com/v1', format:'openai'},
+            {name:'Moonshot',  icon:'🌙', base_url:'https://api.moonshot.cn/v1',       format:'openai'},
+            {name:'智谱 AI',   icon:'🟣', base_url:'https://open.bigmodel.cn/api/paas/v4', format:'openai'},
+            {name:'零一万物',   icon:'🌐', base_url:'https://api.lingyiwanwu.com/v1',   format:'openai'},
+            {name:'阿里云百炼', icon:'☁️',  base_url:'https://dashscope.aliyuncs.com/compatible-mode/v1', format:'openai'},
+            {name:'讯飞星火',   icon:'✨', base_url:'https://spark-api-open.xf-yun.com/v1', format:'openai'},
+            {name:'火山引擎',   icon:'🌋', base_url:'https://ark.cn-beijing.volces.com/api/v3', format:'openai'},
+            {name:'Together',  icon:'🤝', base_url:'https://api.together.xyz/v1',      format:'openai'},
+            {name:'Mistral',   icon:'Ⓜ️',  base_url:'https://api.mistral.ai/v1',       format:'openai'},
+        ];
+
+        async function autoDetectProvider(apiKey) {
+            // Custom URL
+            const customUrl = document.getElementById('baseUrl').value.trim();
+            if (customUrl) {
+                const fmt = apiKey.startsWith('AIza') ? 'gemini' : 'openai';
+                return {name:'自定义', icon:'🔧', base_url:customUrl.replace(/\/+$/, ''), format:fmt};
+            }
+            // Prefix match
+            for (const p of PROVIDER_BY_PREFIX) {
+                if (apiKey.startsWith(p.prefix)) return {...p};
+            }
+            if (apiKey.startsWith('sk-proj-') || apiKey.startsWith('sk-svcacct-')) {
+                return {name:'OpenAI', icon:'🟢', base_url:'https://api.openai.com/v1', format:'openai'};
+            }
+            // Probe for sk- keys
+            if (apiKey.startsWith('sk-')) {
+                for (const p of PROBE_LIST) {
+                    try {
+                        const resp = await apiFetch(`${p.base_url}/models`, {
+                            headers: {'Authorization': `Bearer ${apiKey}`},
+                            signal: AbortSignal.timeout(6000),
+                        });
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            if (data.data || data.models || data.object) return {...p};
+                        }
+                    } catch(e) { /* ignore */ }
+                }
+            }
+            return null;
+        }
+
+        // ─── Manual provider selector ───
+        const MANUAL_PROVIDERS = [
+            {name:'腾讯云混元',  icon:'🐧', base_url:'https://api.hunyuan.cloud.tencent.com/v1'},
+            {name:'硅基流动',   icon:'🔷', base_url:'https://api.siliconflow.cn/v1'},
+            {name:'DeepSeek',  icon:'🔹', base_url:'https://api.deepseek.com'},
+            {name:'阿里云百炼', icon:'☁️',  base_url:'https://dashscope.aliyuncs.com/compatible-mode/v1'},
+            {name:'智谱 AI',   icon:'🟣', base_url:'https://open.bigmodel.cn/api/paas/v4'},
+            {name:'Moonshot',  icon:'🌙', base_url:'https://api.moonshot.cn/v1'},
+            {name:'讯飞星火',   icon:'✨', base_url:'https://spark-api-open.xf-yun.com/v1'},
+            {name:'火山引擎',   icon:'🌋', base_url:'https://ark.cn-beijing.volces.com/api/v3'},
+            {name:'OpenAI',    icon:'🟢', base_url:'https://api.openai.com/v1'},
+            {name:'Groq',      icon:'🟠', base_url:'https://api.groq.com/openai/v1'},
+        ];
+
+        function showManualProviderSelector() {
+            const selector = document.getElementById('manualProviderSelector');
+            const grid = document.getElementById('providerGrid');
+            grid.innerHTML = MANUAL_PROVIDERS.map(p =>
+                `<button class="provider-btn" onclick="useManualProvider('${p.name}','${p.icon}','${p.base_url}')">
+                    <span class="p-icon">${p.icon}</span>
+                    <div><div class="p-name">${p.name}</div><div class="p-url">${p.base_url}</div></div>
+                </button>`
+            ).join('');
+            selector.style.display = 'block';
+        }
+
+        function hideManualProviderSelector() {
+            document.getElementById('manualProviderSelector').style.display = 'none';
+        }
+
+        async function useManualProvider(name, icon, baseUrl) {
+            hideManualProviderSelector();
+            currentProvider = {name, icon, base_url: baseUrl, format: 'openai'};
+            currentFormat = 'openai';
+            currentBaseUrl = baseUrl;
+            // Re-run test with the manually selected provider
+            const btn = document.getElementById('btnTest');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            btn.querySelector('.btn-text').textContent = '测试中...';
+            showStatus('success', '✅', `已选择: ${icon} ${name}`);
+
+            try {
+                showStatus('info', '⏳', `正在从 ${name} 获取模型列表...`);
+                allModels = await fetchModels();
+                if (allModels.length === 0) {
+                    showStatus('error', '❌', `密钥在 ${name} 上无法获取模型，请确认密钥和服务商是否匹配`);
+                    return;
+                }
+                showStatus('success', '✅', `密钥有效！共发现 ${allModels.length} 个模型`);
+                renderSummary();
+                renderModels();
+                document.getElementById('resultsSection').classList.add('show');
+                showQuotaSection();
+                const testCall = document.getElementById('testCall').checked;
+                if (testCall) await testAllModels();
+                if (currentFormat === 'openai') {
+                    showStatus('info', '💳', '正在查询账户余额...');
+                    await showAccountDiagnosis();
+                }
+                const finalOk = document.querySelectorAll('.btn-test-model.test-success').length;
+                const finalFail = document.querySelectorAll('.btn-test-model.test-fail').length;
+                const finalTotal = finalOk + finalFail;
+                if (finalTotal > 0) {
+                    showStatus(finalOk > 0 ? 'success' : 'error', finalOk > 0 ? '✅' : '❌',
+                        `测试完成！${finalTotal} 个模型中 ${finalOk} 个可用, ${finalFail} 个不可用 (${icon} ${name})`);
+                }
+            } catch (err) {
+                handleFetchError(err);
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                btn.querySelector('.btn-text').textContent = '开始测试';
+            }
+        }
+
+        function useManualUrl() {
+            const url = document.getElementById('manualUrlInput').value.trim();
+            if (!url) { alert('请输入 API 地址'); return; }
+            useManualProvider('自定义', '🔧', url.replace(/\/+$/, ''));
+        }
 
         // Toggle key visibility
         function toggleKeyVisibility() {
@@ -835,14 +1485,12 @@
             arrow.textContent = inputs.classList.contains('show') ? '▼' : '▶';
         }
 
-        // Get base URL
+        // Get base URL (used as fallback if auto-detect set it already)
         function getBaseUrl() {
+            if (currentBaseUrl) return currentBaseUrl;
             const customUrl = document.getElementById('baseUrl').value.trim();
             const version = document.getElementById('apiVersion').value;
-            if (customUrl) {
-                // Remove trailing slash
-                return customUrl.replace(/\/+$/, '');
-            }
+            if (customUrl) return customUrl.replace(/\/+$/, '');
             return `https://generativelanguage.googleapis.com/${version}`;
         }
 
@@ -868,17 +1516,62 @@
             }
 
             currentApiKey = apiKey;
-            currentBaseUrl = getBaseUrl();
 
             const btn = document.getElementById('btnTest');
             btn.classList.add('loading');
             btn.disabled = true;
-            btn.querySelector('.btn-text').textContent = '测试中...';
+            btn.querySelector('.btn-text').textContent = '识别中...';
 
             document.getElementById('initialState').style.display = 'none';
-            showStatus('info', '⏳', '正在获取模型列表...');
+            showStatus('info', '🔍', '正在自动识别 API 服务商...');
+
+            // Auto-detect provider
+            const provider = await autoDetectProvider(apiKey);
+            if (provider && provider.format === 'anthropic') {
+                document.getElementById('resultsSection').classList.remove('show');
+                allModels = [];
+                showStatus('error', '⚠️', '已识别为 Anthropic Claude 密钥，暂不支持其原生 API 格式。请使用 OpenAI 兼容的转发服务。');
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                btn.querySelector('.btn-text').textContent = '开始测试';
+                return;
+            }
+            if (provider && provider.format === 'tencent_secret') {
+                document.getElementById('resultsSection').classList.remove('show');
+                allModels = [];
+                showStatus('error', '⚠️',
+                    '🐧 检测到腾讯云 SecretId (AKID 开头)，这不是 API Key！<br>' +
+                    '请前往 <a href="https://console.cloud.tencent.com/hunyuan" target="_blank" style="color:#52b788;">腾讯云混元控制台</a> ' +
+                    '→「API密钥管理」→「创建密钥」生成 sk-* 格式的 API Key 后重试。');
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                btn.querySelector('.btn-text').textContent = '开始测试';
+                return;
+            }
+            if (!provider) {
+                // 清除上一次的测试结果
+                document.getElementById('resultsSection').classList.remove('show');
+                document.getElementById('accountSection').style.display = 'none';
+                document.getElementById('quotaSection').classList.remove('show');
+                allModels = [];
+
+                showStatus('error', '❌', '自动探测未能匹配到服务商，请从下方手动选择或填写自定义地址');
+                showManualProviderSelector();
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                btn.querySelector('.btn-text').textContent = '开始测试';
+                return;
+            }
+            currentProvider = provider;
+            currentFormat = provider.format;
+            currentBaseUrl = provider.base_url;
+            hideManualProviderSelector();
+            showStatus('success', '✅', `已识别: ${provider.icon} ${provider.name} (${provider.format === 'gemini' ? 'Gemini API' : 'OpenAI 兼容'})`);
+
+            btn.querySelector('.btn-text').textContent = '测试中...';
 
             try {
+                showStatus('info', '⏳', `正在从 ${provider.name} 获取模型列表...`);
                 allModels = await fetchModels();
 
                 if (allModels.length === 0) {
@@ -891,11 +1584,29 @@
                 renderSummary();
                 renderModels();
                 document.getElementById('resultsSection').classList.add('show');
+                showQuotaSection();
 
                 // Test each model if checkbox is checked
                 const testCall = document.getElementById('testCall').checked;
                 if (testCall) {
                     await testAllModels();
+                }
+
+                // Account diagnosis for OpenAI-compatible providers
+                if (currentFormat === 'openai') {
+                    showStatus('info', '💳', '正在查询账户余额...');
+                    await showAccountDiagnosis();
+                }
+
+                // Final status
+                const finalOk = document.querySelectorAll('.btn-test-model.test-success').length;
+                const finalFail = document.querySelectorAll('.btn-test-model.test-fail').length;
+                const finalTotal = finalOk + finalFail;
+                if (finalTotal > 0) {
+                    showStatus(finalOk > 0 ? 'success' : 'error',
+                        finalOk > 0 ? '✅' : '❌',
+                        `测试完成！${finalTotal} 个模型中 ${finalOk} 个可用, ${finalFail} 个不可用` +
+                        (currentProvider ? ` (${currentProvider.icon} ${currentProvider.name})` : ''));
                 }
 
             } catch (err) {
@@ -908,60 +1619,208 @@
             }
         }
 
-        // Fetch all models (with pagination)
+        // Fetch all models (supports both Gemini and OpenAI formats)
         async function fetchModels() {
+            if (currentFormat === 'openai') {
+                return await fetchModelsOpenAI();
+            }
+            return await fetchModelsGemini();
+        }
+
+        async function fetchModelsGemini() {
             let models = [];
             let pageToken = '';
             let page = 0;
-
             do {
                 const url = `${currentBaseUrl}/models?key=${currentApiKey}&pageSize=1000` +
                     (pageToken ? `&pageToken=${pageToken}` : '');
-
-                const resp = await fetch(url);
-
+                const resp = await apiFetch(url);
                 if (!resp.ok) {
                     const body = await resp.json().catch(() => ({}));
                     const err = new Error(body?.error?.message || `HTTP ${resp.status}`);
                     err.status = resp.status;
-                    err.body = body;
                     throw err;
                 }
-
                 const data = await resp.json();
-                if (data.models) {
-                    models = models.concat(data.models);
-                }
+                if (data.models) models = models.concat(data.models);
                 pageToken = data.nextPageToken || '';
                 page++;
-
-                if (page > 10) break; // safety
+                if (page > 10) break;
             } while (pageToken);
-
-            // Sort: newest / most popular first
             models.sort((a, b) => {
-                const aName = a.name || '';
-                const bName = b.name || '';
-                // Gemini models first
-                const aIsGemini = aName.includes('gemini') ? 1 : 0;
-                const bIsGemini = bName.includes('gemini') ? 1 : 0;
-                if (aIsGemini !== bIsGemini) return bIsGemini - aIsGemini;
+                const aName = a.name || '', bName = b.name || '';
+                const aG = aName.includes('gemini') ? 1 : 0, bG = bName.includes('gemini') ? 1 : 0;
+                if (aG !== bG) return bG - aG;
                 return aName.localeCompare(bName);
             });
-
             return models;
         }
 
-        // Handle fetch errors
+        function guessOpenAIMethods(modelId) {
+            const mid = modelId.toLowerCase();
+            if (['embed','bge-','e5-','gte-'].some(x => mid.includes(x))) return ['embedContent'];
+            if (['tts','whisper','audio','speech'].some(x => mid.includes(x))) return [];
+            if (['dall-e','flux','stable-diffusion','cogview'].some(x => mid.includes(x))) return ['predict'];
+            if (mid.includes('rerank')) return [];
+            return ['generateContent'];
+        }
+
+        // ─── 已知模型参数 ───
+        const KNOWN_MODEL_SPECS = {
+            'deepseek-chat':{input:65536,output:8192},'deepseek-reasoner':{input:65536,output:8192},
+            'deepseek-coder':{input:65536,output:8192},'deepseek-v3':{input:65536,output:8192},
+            'deepseek-r1':{input:65536,output:8192},
+            'gpt-4o':{input:128000,output:16384},'gpt-4o-mini':{input:128000,output:16384},
+            'gpt-4-turbo':{input:128000,output:4096},'gpt-4':{input:8192,output:8192},
+            'gpt-3.5-turbo':{input:16385,output:4096},
+            'o1':{input:200000,output:100000},'o1-mini':{input:128000,output:65536},
+            'o3-mini':{input:200000,output:100000},
+            'qwen-turbo':{input:131072,output:8192},'qwen-plus':{input:131072,output:8192},
+            'qwen-max':{input:32768,output:8192},'qwen-long':{input:1000000,output:8192},
+            'qwen2.5-72b-instruct':{input:131072,output:8192},
+            'moonshot-v1-8k':{input:8192,output:4096},'moonshot-v1-32k':{input:32768,output:16384},
+            'moonshot-v1-128k':{input:131072,output:65536},
+            'glm-4':{input:128000,output:4096},'glm-4-flash':{input:128000,output:4096},
+            'glm-4-plus':{input:128000,output:4096},'glm-4-long':{input:1000000,output:4096},
+            'yi-large':{input:32768,output:4096},'yi-medium':{input:16384,output:4096},
+            'claude-3.5-sonnet':{input:200000,output:8192},'claude-3-haiku':{input:200000,output:4096},
+            'mistral-large-latest':{input:128000,output:4096},
+            'hunyuan-pro':{input:32000,output:4096},'hunyuan-standard':{input:32000,output:4096},
+            'hunyuan-lite':{input:32000,output:4096},'hunyuan-turbo':{input:32000,output:4096},
+            'hunyuan-large':{input:32000,output:4096},'hunyuan-code':{input:32000,output:4096},
+            'hunyuan-vision':{input:32000,output:4096},
+            'generalv3.5':{input:128000,output:4096},'4.0Ultra':{input:128000,output:8192},
+        };
+
+        function fillModelSpecs(model) {
+            if (model.inputTokenLimit && model.outputTokenLimit) return;
+            const mid = (model._model_id || model.name?.replace('models/','') || '').toLowerCase();
+            let specs = KNOWN_MODEL_SPECS[mid];
+            if (!specs) {
+                for (const [key, val] of Object.entries(KNOWN_MODEL_SPECS)) {
+                    if (mid.startsWith(key) || key.startsWith(mid)) { specs = val; break; }
+                }
+            }
+            if (specs) {
+                if (!model.inputTokenLimit)  model.inputTokenLimit  = specs.input;
+                if (!model.outputTokenLimit) model.outputTokenLimit = specs.output;
+            }
+        }
+
+        // ─── 错误翻译 ───
+        const ERROR_KEYWORD_MAP = [
+            ['insufficient balance', '账户余额不足，请前往平台充值'],
+            ['insufficient_balance', '账户余额不足，请前往平台充值'],
+            ['insufficient quota',   '配额不足，请前往平台充值'],
+            ['quota exceeded',       '配额已耗尽'],
+            ['rate limit',           '请求频率超限'],
+            ['rate_limit_exceeded',  '请求频率超限'],
+            ['invalid api key',      '密钥无效，请检查是否正确复制'],
+            ['invalid_api_key',      '密钥无效，请检查是否正确复制'],
+            ['authentication',       '认证失败，密钥无效或已过期'],
+            ['unauthorized',         '未授权，密钥无效或已过期'],
+            ['permission denied',    '没有权限，可能未开通此模型'],
+            ['model not found',      '模型不存在或未开通'],
+            ['model_not_found',      '模型不存在或未开通'],
+            ['content filter',       '内容被安全过滤器拦截'],
+            ['context length exceeded','输入超出上下文长度限制'],
+            ['overloaded',           '服务过载，请稍后重试'],
+            ['billing',              '计费问题，请检查账户状态'],
+            ['payment required',     '需要付费，请先充值'],
+            ['expired',              '密钥已过期，请重新生成'],
+            ['deactivated',          '账户已停用'],
+        ];
+        const ERROR_STATUS_MAP = {
+            400:'请求参数错误', 401:'密钥无效或已过期', 402:'账户余额不足，请充值',
+            403:'没有权限访问此模型', 404:'模型不存在或已下线', 429:'请求太频繁，已触发速率限制',
+            500:'服务商内部错误', 502:'服务商网关错误', 503:'服务暂时不可用',
+            504:'服务商网关超时', 529:'服务过载，请稍后重试',
+        };
+
+        function translateError(status, msg) {
+            const lower = (msg || '').toLowerCase();
+            for (const [kw, cn] of ERROR_KEYWORD_MAP) {
+                if (lower.includes(kw)) return cn;
+            }
+            if (ERROR_STATUS_MAP[status]) return ERROR_STATUS_MAP[status];
+            return ERROR_STATUS_MAP[status] || `HTTP ${status}: ${(msg||'').substring(0,60)}`;
+        }
+
+        async function fetchModelsOpenAI() {
+            const resp = await apiFetch(`${currentBaseUrl}/models`, {
+                headers: {'Authorization': `Bearer ${currentApiKey}`}
+            });
+            if (!resp.ok) {
+                const body = await resp.json().catch(() => ({}));
+                const err = new Error(body?.error?.message || `HTTP ${resp.status}`);
+                err.status = resp.status;
+                throw err;
+            }
+            const data = await resp.json();
+            const rawModels = data.data || data.models || [];
+            return rawModels.map(m => {
+                const id = m.id || '';
+                const methods = guessOpenAIMethods(id);
+                const model = {
+                    name: `models/${id}`,
+                    displayName: id,
+                    description: m.description || `Provider: ${currentProvider?.name || 'Unknown'}`,
+                    supportedGenerationMethods: methods,
+                    inputTokenLimit: m.context_length || m.max_context_length || m.context_window || m.max_input_tokens || null,
+                    outputTokenLimit: m.max_output_tokens || m.max_completion_tokens || m.max_tokens || null,
+                    _format: 'openai',
+                    _model_id: id,
+                    _owned_by: m.owned_by || '',
+                };
+                fillModelSpecs(model);
+                return model;
+            }).sort((a, b) => (a._model_id || '').localeCompare(b._model_id || ''));
+        }
+
+        // Query account balance for OpenAI-compatible providers
+        async function queryBalance() {
+            if (currentFormat !== 'openai' || !currentApiKey) return null;
+            const baseNoVersion = currentBaseUrl.replace(/\/v[0-9]+\/?$/, '').replace(/\/+$/, '');
+            const endpoints = [
+                { path: '/user/info',    type: 'siliconflow' },
+                { path: '/user/balance', type: 'deepseek'    },
+                { path: '/dashboard/billing/credit_grants', type: 'openai_credit' },
+            ];
+            for (const ep of endpoints) {
+                try {
+                    const resp = await apiFetch(`${baseNoVersion}${ep.path}`, {
+                        headers: { 'Authorization': `Bearer ${currentApiKey}` },
+                        signal: AbortSignal.timeout(6000),
+                    });
+                    if (!resp.ok) continue;
+                    const data = await resp.json();
+                    if (ep.type === 'siliconflow') {
+                        const bal = data?.data?.balance;
+                        if (bal != null) return { balance: parseFloat(bal), currency: 'CNY', source: 'SiliconFlow' };
+                    } else if (ep.type === 'deepseek') {
+                        const infos = data?.balance_infos;
+                        if (infos?.length) return { balance: parseFloat(infos[0].total_balance || 0), currency: infos[0].currency || 'CNY', source: 'DeepSeek' };
+                        if (data?.is_available != null) return { available: data.is_available, source: 'DeepSeek' };
+                    } else if (ep.type === 'openai_credit') {
+                        const total = data?.total_granted || 0, used = data?.total_used || 0;
+                        return { balance: total - used, currency: 'USD', source: 'OpenAI' };
+                    }
+                } catch(e) { /* ignore */ }
+            }
+            return null;
+        }
+
+        // Handle fetch errors (with Chinese translation)
         function handleFetchError(err) {
-            if (err.status === 400) {
-                showStatus('error', '❌', `请求错误: ${err.message}`);
-            } else if (err.status === 401 || err.status === 403) {
-                showStatus('error', '❌', `密钥无效或已过期: ${err.message}`);
-            } else if (err.status === 429) {
-                showStatus('error', '⚠️', `请求频率超限，请稍后再试: ${err.message}`);
-            } else if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
-                showStatus('error', '❌', '网络连接失败，请检查网络或代理设置');
+            if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError') || err.message?.includes('TypeError')) {
+                if (USE_PROXY) {
+                    showStatus('error', '❌', '网络连接失败，本地代理服务器无法访问目标 API，请检查网络');
+                } else {
+                    showStatus('error', '❌', '网络连接失败 (可能因 CORS 限制)。建议运行 py gemini_test.py --web 启用代理模式');
+                }
+            } else if (err.status) {
+                const cnMsg = translateError(err.status, err.message || '');
+                showStatus('error', '❌', cnMsg);
             } else {
                 showStatus('error', '❌', `测试失败: ${err.message}`);
             }
@@ -981,7 +1840,14 @@
                 if (!methods.includes('generateContent') && !methods.includes('embedContent') && !methods.includes('embedText')) otherCount++;
             });
 
+            const providerHtml = currentProvider
+                ? `<div class="summary-card" style="background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(59,130,246,.1));border-color:rgba(99,102,241,.3)">
+                       <div class="number" style="font-size:1.4rem">${currentProvider.icon} ${currentProvider.name}</div>
+                       <div class="label">${currentFormat === 'gemini' ? 'Gemini API' : 'OpenAI 兼容'}</div>
+                   </div>` : '';
+
             document.getElementById('summary').innerHTML = `
+                ${providerHtml}
                 <div class="summary-card total">
                     <div class="number">${total}</div>
                     <div class="label">模型总数</div>
@@ -1119,7 +1985,7 @@
             }).join('');
         }
 
-        // Test a single model
+        // Test a single model (supports both Gemini and OpenAI formats)
         async function testSingleModel(btn) {
             const model = btn.dataset.model;
             const type = btn.dataset.type;
@@ -1128,62 +1994,102 @@
             btn.textContent = '测试中...';
 
             try {
-                if (type === 'generate') {
-                    const url = `${currentBaseUrl}/${model}:generateContent?key=${currentApiKey}`;
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: 'Hello, respond with just "OK".' }] }],
-                            generationConfig: { maxOutputTokens: 10 }
-                        })
-                    });
-
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '(空响应)';
-                        btn.className = 'btn-test-model test-success';
-                        btn.textContent = `可用 - 响应: "${text.substring(0, 30)}"`;
-                    } else {
-                        const errData = await resp.json().catch(() => ({}));
-                        btn.className = 'btn-test-model test-fail';
-                        btn.textContent = `不可用 (${resp.status}): ${errData?.error?.message?.substring(0, 50) || '未知错误'}`;
-                    }
+                if (currentFormat === 'openai') {
+                    await testSingleModelOpenAI(btn, model, type);
                 } else {
-                    // Embed test
-                    const isEmbedText = !allModels.find(m => m.name === model)?.supportedGenerationMethods?.includes('embedContent');
-                    let url, body;
-
-                    if (isEmbedText) {
-                        url = `${currentBaseUrl}/${model}:embedText?key=${currentApiKey}`;
-                        body = JSON.stringify({ text: 'Hello' });
-                    } else {
-                        url = `${currentBaseUrl}/${model}:embedContent?key=${currentApiKey}`;
-                        body = JSON.stringify({
-                            content: { parts: [{ text: 'Hello' }] }
-                        });
-                    }
-
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body
-                    });
-
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        const dim = data?.embedding?.values?.length || data?.embedding?.value?.length || '?';
-                        btn.className = 'btn-test-model test-success';
-                        btn.textContent = `可用 - 维度: ${dim}`;
-                    } else {
-                        const errData = await resp.json().catch(() => ({}));
-                        btn.className = 'btn-test-model test-fail';
-                        btn.textContent = `不可用 (${resp.status}): ${errData?.error?.message?.substring(0, 50) || '未知错误'}`;
-                    }
+                    await testSingleModelGemini(btn, model, type);
                 }
             } catch (err) {
                 btn.className = 'btn-test-model test-fail';
-                btn.textContent = `网络错误: ${err.message.substring(0, 40)}`;
+                btn.textContent = `网络错误: ${(err.message || '').substring(0, 40)}`;
+            }
+        }
+
+        async function testSingleModelGemini(btn, model, type) {
+            if (type === 'generate') {
+                const url = `${currentBaseUrl}/${model}:generateContent?key=${currentApiKey}`;
+                const resp = await apiFetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: 'Hello, respond with just "OK".' }] }],
+                        generationConfig: { maxOutputTokens: 10 }
+                    })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '(空响应)';
+                    btn.className = 'btn-test-model test-success';
+                    btn.textContent = `可用 - 响应: "${text.substring(0, 30)}"`;
+                } else {
+                    const errData = await resp.json().catch(() => ({}));
+                    btn.className = 'btn-test-model test-fail';
+                    btn.textContent = `不可用 (${resp.status}): ${errData?.error?.message?.substring(0, 50) || '未知错误'}`;
+                }
+            } else {
+                const isEmbedText = !allModels.find(m => m.name === model)?.supportedGenerationMethods?.includes('embedContent');
+                const url = isEmbedText
+                    ? `${currentBaseUrl}/${model}:embedText?key=${currentApiKey}`
+                    : `${currentBaseUrl}/${model}:embedContent?key=${currentApiKey}`;
+                const body = isEmbedText
+                    ? JSON.stringify({ text: 'Hello' })
+                    : JSON.stringify({ content: { parts: [{ text: 'Hello' }] } });
+                const resp = await apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const dim = data?.embedding?.values?.length || data?.embedding?.value?.length || '?';
+                    btn.className = 'btn-test-model test-success';
+                    btn.textContent = `可用 - 维度: ${dim}`;
+                } else {
+                    const errData = await resp.json().catch(() => ({}));
+                    btn.className = 'btn-test-model test-fail';
+                    btn.textContent = `不可用 (${resp.status}): ${errData?.error?.message?.substring(0, 50) || '未知错误'}`;
+                }
+            }
+        }
+
+        async function testSingleModelOpenAI(btn, model, type) {
+            const modelId = model.replace('models/', '');
+            if (type === 'generate') {
+                const resp = await apiFetch(`${currentBaseUrl}/chat/completions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentApiKey}` },
+                    body: JSON.stringify({
+                        model: modelId,
+                        messages: [{ role: 'user', content: 'Say OK' }],
+                        max_tokens: 10,
+                    })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const text = data?.choices?.[0]?.message?.content || '(空响应)';
+                    btn.className = 'btn-test-model test-success';
+                    btn.textContent = `✓ 可用 - "${text.substring(0, 30).trim()}"`;
+                } else {
+                    const errData = await resp.json().catch(() => ({}));
+                    const rawMsg = errData?.error?.message || (typeof errData?.error === 'string' ? errData.error : '') || '';
+                    const cnMsg = translateError(resp.status, rawMsg);
+                    btn.className = 'btn-test-model test-fail';
+                    btn.textContent = `✗ ${cnMsg.substring(0, 50)}`;
+                }
+            } else {
+                const resp = await apiFetch(`${currentBaseUrl}/embeddings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentApiKey}` },
+                    body: JSON.stringify({ model: modelId, input: 'Hello' })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const dim = data?.data?.[0]?.embedding?.length || '?';
+                    btn.className = 'btn-test-model test-success';
+                    btn.textContent = `✓ 可用 - 维度: ${dim}`;
+                } else {
+                    const errData = await resp.json().catch(() => ({}));
+                    const rawMsg = errData?.error?.message || (typeof errData?.error === 'string' ? errData.error : '') || '';
+                    const cnMsg = translateError(resp.status, rawMsg);
+                    btn.className = 'btn-test-model test-fail';
+                    btn.textContent = `✗ ${cnMsg.substring(0, 50)}`;
+                }
             }
         }
 
@@ -1210,43 +2116,51 @@
             const t0 = performance.now();
 
             try {
-                const url = `${currentBaseUrl}/${modelId}:generateContent?key=${currentApiKey}`;
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                    })
-                });
+                let resp, data, text, metaHtml;
+                const elapsed = () => ((performance.now() - t0) / 1000).toFixed(1);
 
-                const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+                if (currentFormat === 'openai') {
+                    resp = await apiFetch(`${currentBaseUrl}/chat/completions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentApiKey}` },
+                        body: JSON.stringify({ model: modelId.replace('models/', ''), messages: [{ role: 'user', content: prompt }] })
+                    });
+                } else {
+                    resp = await apiFetch(`${currentBaseUrl}/${modelId}:generateContent?key=${currentApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                }
 
                 if (resp.ok) {
-                    const data = await resp.json();
-                    const candidate = data?.candidates?.[0];
-                    const text = candidate?.content?.parts?.map(p => p.text || '').join('') || '(空响应)';
-                    const finishReason = candidate?.finishReason || '';
-                    const tokenInfo = data?.usageMetadata;
-
-                    let metaHtml = `耗时 ${elapsed}s`;
-                    if (tokenInfo) {
-                        metaHtml += ` · 输入 ${tokenInfo.promptTokenCount || '?'} tokens · 输出 ${tokenInfo.candidatesTokenCount || tokenInfo.totalTokenCount || '?'} tokens`;
+                    data = await resp.json();
+                    if (currentFormat === 'openai') {
+                        text = data?.choices?.[0]?.message?.content || '(空响应)';
+                        metaHtml = `耗时 ${elapsed()}s`;
+                        const usage = data?.usage;
+                        if (usage) metaHtml += ` · 输入 ${usage.prompt_tokens || '?'} tokens · 输出 ${usage.completion_tokens || '?'} tokens`;
+                    } else {
+                        const candidate = data?.candidates?.[0];
+                        text = candidate?.content?.parts?.map(p => p.text || '').join('') || '(空响应)';
+                        const finishReason = candidate?.finishReason || '';
+                        const tokenInfo = data?.usageMetadata;
+                        metaHtml = `耗时 ${elapsed()}s`;
+                        if (tokenInfo) metaHtml += ` · 输入 ${tokenInfo.promptTokenCount || '?'} tokens · 输出 ${tokenInfo.candidatesTokenCount || tokenInfo.totalTokenCount || '?'} tokens`;
+                        if (finishReason && finishReason !== 'STOP') metaHtml += ` · 停止原因: ${finishReason}`;
                     }
-                    if (finishReason && finishReason !== 'STOP') {
-                        metaHtml += ` · 停止原因: ${finishReason}`;
-                    }
-
                     respDiv.className = 'chat-response show';
                     respDiv.innerHTML = `<span class="response-label">模型响应:</span><span class="response-text">${escapeHtml(text)}</span><span class="response-meta">${metaHtml}</span>`;
                 } else {
                     const errData = await resp.json().catch(() => ({}));
-                    const errMsg = errData?.error?.message || `HTTP ${resp.status}`;
+                    const rawMsg = errData?.error?.message || (typeof errData?.error === 'string' ? errData.error : '') || '';
+                    const cnMsg = (currentFormat === 'openai') ? translateError(resp.status, rawMsg) : (rawMsg || `HTTP ${resp.status}`);
                     respDiv.className = 'chat-response show error';
-                    respDiv.innerHTML = `<span class="response-label">请求失败 (${resp.status}):</span><span class="response-text">${escapeHtml(errMsg)}</span><span class="response-meta">耗时 ${elapsed}s</span>`;
+                    respDiv.innerHTML = `<span class="response-label">请求失败:</span><span class="response-text">${escapeHtml(cnMsg)}</span><span class="response-meta">耗时 ${elapsed()}s</span>`;
                 }
             } catch (err) {
                 respDiv.className = 'chat-response show error';
-                respDiv.innerHTML = `<span class="response-label">网络错误:</span><span class="response-text">${escapeHtml(err.message)}</span>`;
+                respDiv.innerHTML = `<span class="response-label">网络错误:</span><span class="response-text">${escapeHtml(err.message || '连接失败')}</span>`;
             } finally {
                 sendBtn.disabled = false;
                 sendBtn.textContent = '发送';
@@ -1307,6 +2221,412 @@
         document.getElementById('apiKey').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') startTest();
         });
+
+        document.getElementById('tokenDemand').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') calculateTokenDemand();
+        });
+
+        // ═══ Quota Analysis ═══════════════════════════════════════
+
+        // Known free-tier rate limits (fallback reference)
+        const KNOWN_FREE_LIMITS = {
+            "models/gemini-2.5-pro":               {rpm: 5,   tpm: 250000,   rpd: 25},
+            "models/gemini-2.5-flash":             {rpm: 10,  tpm: 250000,   rpd: 500},
+            "models/gemini-2.5-flash-lite":        {rpm: 30,  tpm: 1000000,  rpd: 3000},
+            "models/gemini-2.5-flash-preview-09-2025":      {rpm: 10, tpm: 250000, rpd: 500},
+            "models/gemini-2.5-flash-lite-preview-09-2025": {rpm: 30, tpm: 1000000, rpd: 3000},
+            "models/gemini-2.5-flash-image":       {rpm: 10,  tpm: 250000,   rpd: 500},
+            "models/gemini-2.0-flash":             {rpm: 15,  tpm: 1000000,  rpd: 1500},
+            "models/gemini-2.0-flash-001":         {rpm: 15,  tpm: 1000000,  rpd: 1500},
+            "models/gemini-2.0-flash-exp-image-generation": {rpm: 10, tpm: 1000000, rpd: 1500},
+            "models/gemini-2.0-flash-lite":        {rpm: 30,  tpm: 1000000,  rpd: 3000},
+            "models/gemini-2.0-flash-lite-001":    {rpm: 30,  tpm: 1000000,  rpd: 3000},
+            "models/gemini-exp-1206":              {rpm: 10,  tpm: 1000000,  rpd: 50},
+            "models/gemini-3-pro-preview":         {rpm: 5,   tpm: 250000,   rpd: 25},
+            "models/gemini-3-flash-preview":       {rpm: 10,  tpm: 250000,   rpd: 500},
+            "models/gemini-3-pro-image-preview":   {rpm: 5,   tpm: 250000,   rpd: 25},
+            "models/nano-banana-pro-preview":      {rpm: 5,   tpm: 250000,   rpd: 25},
+            "models/gemini-flash-latest":          {rpm: 10,  tpm: 250000,   rpd: 500},
+            "models/gemini-flash-lite-latest":     {rpm: 30,  tpm: 1000000,  rpd: 3000},
+            "models/gemini-pro-latest":            {rpm: 5,   tpm: 250000,   rpd: 25},
+            "models/gemma-3-1b-it":               {rpm: 30,  tpm: 1000000,  rpd: 14400},
+            "models/gemma-3-4b-it":               {rpm: 30,  tpm: 1000000,  rpd: 14400},
+            "models/gemma-3-12b-it":              {rpm: 30,  tpm: 1000000,  rpd: 14400},
+            "models/gemma-3-27b-it":              {rpm: 30,  tpm: 1000000,  rpd: 14400},
+            "models/gemma-3n-e4b-it":             {rpm: 30,  tpm: 1000000,  rpd: 14400},
+            "models/gemma-3n-e2b-it":             {rpm: 30,  tpm: 1000000,  rpd: 14400},
+            "models/gemini-robotics-er-1.5-preview": {rpm: 5, tpm: 250000, rpd: 25},
+        };
+
+        let quotaData = [];
+
+        // Parse rate-limit headers from fetch response
+        function parseRateLimitHeaders(headers) {
+            const info = {};
+            const headerMap = [
+                ['x-ratelimit-limit-requests', 'rpm'],
+                ['x-ratelimit-remaining-requests', 'rpm_remaining'],
+                ['x-ratelimit-limit-tokens', 'tpm'],
+                ['x-ratelimit-remaining-tokens', 'tpm_remaining'],
+                ['x-ratelimit-limit-requests-per-day', 'rpd'],
+                ['x-ratelimit-remaining-requests-per-day', 'rpd_remaining'],
+            ];
+            for (const [header, field] of headerMap) {
+                const val = headers.get(header);
+                if (val !== null) {
+                    const num = parseInt(val, 10);
+                    if (!isNaN(num)) info[field] = num;
+                }
+            }
+            return info;
+        }
+
+        // Find known limits by exact or prefix match
+        function getKnownLimits(modelName) {
+            if (KNOWN_FREE_LIMITS[modelName]) {
+                return { ...KNOWN_FREE_LIMITS[modelName], source: '参考值' };
+            }
+            for (const [knownName, limits] of Object.entries(KNOWN_FREE_LIMITS)) {
+                if (modelName.startsWith(knownName) || knownName.startsWith(modelName)) {
+                    return { ...limits, source: '参考值 (近似)' };
+                }
+            }
+            return null;
+        }
+
+        // Start quota analysis
+        async function startQuotaAnalysis() {
+            if (!currentApiKey) {
+                showStatus('error', '⚠️', '请先输入 API 密钥并测试');
+                return;
+            }
+
+            // Filter: only available generateContent models
+            const genModels = allModels.filter(m => {
+                const methods = m.supportedGenerationMethods || [];
+                if (!methods.includes('generateContent')) return false;
+                // Check if model was tested and passed
+                const btn = document.querySelector(`.btn-test-model[data-model="${m.name}"]`);
+                if (btn && btn.classList.contains('test-fail')) return false;
+                return true;
+            });
+
+            if (genModels.length === 0) {
+                showStatus('error', '⚠️', '没有可用的文本生成模型，无法进行配额分析');
+                return;
+            }
+
+            const btn = document.getElementById('btnQuota');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            btn.querySelector('.btn-text').textContent = '分析中...';
+
+            showStatus('info', '⏳', `正在检测 ${genModels.length} 个模型的配额限制...`);
+
+            quotaData = [];
+
+            // Fetch rate limits for each model in batches
+            const batchSize = 3;
+            for (let i = 0; i < genModels.length; i += batchSize) {
+                const batch = genModels.slice(i, i + batchSize);
+                const results = await Promise.all(batch.map(m => fetchModelQuota(m)));
+                quotaData.push(...results);
+
+                showStatus('info', '⏳',
+                    `正在检测配额... ${Math.min(i + batchSize, genModels.length)}/${genModels.length}`);
+
+                if (i + batchSize < genModels.length) {
+                    await new Promise(r => setTimeout(r, 300));
+                }
+            }
+
+            // Sort by daily max output descending
+            quotaData.sort((a, b) => (b.dailyMaxOutput || 0) - (a.dailyMaxOutput || 0));
+
+            renderQuotaTable();
+            showStatus('success', '✅',
+                `配额分析完成！已检测 ${quotaData.length} 个模型的限额`);
+
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            btn.querySelector('.btn-text').textContent = '重新分析';
+        }
+
+        // Fetch quota for a single model
+        async function fetchModelQuota(model) {
+            const name = model.name || '';
+            const displayName = model.displayName || name.replace('models/', '');
+            const inputLimit = model.inputTokenLimit || 0;
+            const outputLimit = model.outputTokenLimit || 0;
+
+            let entry = {
+                name,
+                displayName,
+                inputTokenLimit: inputLimit,
+                outputTokenLimit: outputLimit,
+                rpm: null,
+                tpm: null,
+                rpd: null,
+                source: '未知',
+                dailyMaxOutput: null,
+            };
+
+            // Step 1: Make a lightweight request and capture headers
+            try {
+                let resp;
+                if (currentFormat === 'openai') {
+                    const modelId = name.replace('models/', '');
+                    resp = await apiFetch(`${currentBaseUrl}/chat/completions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentApiKey}` },
+                        body: JSON.stringify({ model: modelId, messages: [{ role: 'user', content: 'Hi' }], max_tokens: 1 })
+                    });
+                } else {
+                    resp = await apiFetch(`${currentBaseUrl}/${name}:generateContent?key=${currentApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }], generationConfig: { maxOutputTokens: 1 } })
+                    });
+                }
+
+                const headerInfo = parseRateLimitHeaders(resp.headers);
+                if (headerInfo.rpm != null) {
+                    entry.rpm = headerInfo.rpm;
+                    entry.source = 'API 响应头';
+                }
+                if (headerInfo.tpm != null) entry.tpm = headerInfo.tpm;
+                if (headerInfo.rpd != null) entry.rpd = headerInfo.rpd;
+            } catch (err) {
+                // Ignore, will use fallback
+            }
+
+            // Step 2: Fallback to known limits
+            if (entry.rpm === null) {
+                const known = getKnownLimits(name);
+                if (known) {
+                    entry.rpm = known.rpm;
+                    entry.tpm = known.tpm;
+                    entry.rpd = known.rpd;
+                    entry.source = known.source;
+                }
+            }
+
+            // Step 3: Calculate daily max output
+            const rpd = entry.rpd || 0;
+            const tpm = entry.tpm || 0;
+
+            const dailyByRpd = rpd ? rpd * outputLimit : null;
+            const dailyByTpm = tpm ? tpm * 1440 : null;
+
+            if (dailyByRpd && dailyByTpm) {
+                entry.dailyMaxOutput = Math.min(dailyByRpd, dailyByTpm);
+            } else if (dailyByRpd) {
+                entry.dailyMaxOutput = dailyByRpd;
+            } else if (dailyByTpm) {
+                entry.dailyMaxOutput = dailyByTpm;
+            }
+
+            return entry;
+        }
+
+        // Render the quota comparison table
+        function renderQuotaTable() {
+            const wrapper = document.getElementById('quotaTableWrapper');
+            const tbody = document.getElementById('quotaTableBody');
+            const calc = document.getElementById('tokenCalculator');
+            const note = document.getElementById('quotaNote');
+
+            if (!quotaData.length) {
+                wrapper.style.display = 'none';
+                calc.style.display = 'none';
+                note.style.display = 'none';
+                return;
+            }
+
+            const maxDaily = quotaData[0]?.dailyMaxOutput || 1;
+            const medals = ['🥇', '🥈', '🥉'];
+
+            tbody.innerHTML = quotaData.map((entry, idx) => {
+                const rank = idx + 1;
+                const medal = idx < 3 ? `<span class="rank-medal">${medals[idx]}</span>` : '';
+                const rankClass = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+
+                const barWidth = entry.dailyMaxOutput
+                    ? Math.max(4, Math.round((entry.dailyMaxOutput / maxDaily) * 80))
+                    : 0;
+                const barColor = idx === 0 ? '#fdd663' : idx === 1 ? '#c0c0c0' : idx === 2 ? '#cd7f32' : '#4285f4';
+
+                const sourceClass = entry.source.includes('API') ? 'api' : '';
+
+                return `<tr>
+                    <td>${medal}<span class="rank-num ${rankClass}">${rank}</span></td>
+                    <td class="model-name-cell">${escapeHtml(entry.displayName)}</td>
+                    <td class="num">${entry.rpm ?? '?'}</td>
+                    <td class="num">${entry.tpm ? formatNumber(entry.tpm) : '?'}</td>
+                    <td class="num">${entry.rpd != null ? entry.rpd.toLocaleString() : '?'}</td>
+                    <td class="num">${entry.outputTokenLimit ? formatNumber(entry.outputTokenLimit) : '?'}</td>
+                    <td class="num">
+                        <span class="daily-bar" style="width:${barWidth}px;background:${barColor}"></span>
+                        ${entry.dailyMaxOutput ? formatNumber(entry.dailyMaxOutput) : '?'}
+                    </td>
+                    <td><span class="quota-source ${sourceClass}">${escapeHtml(entry.source)}</span></td>
+                </tr>`;
+            }).join('');
+
+            wrapper.style.display = 'block';
+            calc.style.display = 'block';
+            note.style.display = 'block';
+        }
+
+        // Token calculator
+        function setTokenPreset(value) {
+            document.getElementById('tokenDemand').value = value.toLocaleString();
+            calculateTokenDemand();
+        }
+
+        function parseTokenInput(raw) {
+            raw = raw.toUpperCase().replace(/,/g, '').replace(/\s/g, '').replace(/_/g, '');
+            if (raw.endsWith('B')) return parseFloat(raw.slice(0, -1)) * 1e9;
+            if (raw.endsWith('M')) return parseFloat(raw.slice(0, -1)) * 1e6;
+            if (raw.endsWith('K')) return parseFloat(raw.slice(0, -1)) * 1e3;
+            return parseFloat(raw);
+        }
+
+        function formatTime(days) {
+            if (days < 1 / 24) {
+                const minutes = days * 24 * 60;
+                return { text: `~${Math.round(minutes)} 分钟`, cls: 'time-fast' };
+            }
+            if (days < 1) {
+                const hours = days * 24;
+                return { text: `~${hours.toFixed(1)} 小时`, cls: 'time-fast' };
+            }
+            if (days < 3) {
+                return { text: `~${days.toFixed(1)} 天`, cls: 'time-medium' };
+            }
+            if (days < 7) {
+                return { text: `~${days.toFixed(1)} 天`, cls: 'time-slow' };
+            }
+            return { text: `~${Math.round(days)} 天 (${(days / 7).toFixed(1)} 周)`, cls: 'time-very-slow' };
+        }
+
+        function calculateTokenDemand() {
+            const raw = document.getElementById('tokenDemand').value.trim();
+            if (!raw) return;
+
+            const totalTokens = parseTokenInput(raw);
+            if (isNaN(totalTokens) || totalTokens <= 0) return;
+
+            const resultsDiv = document.getElementById('calcResults');
+            const tbody = document.getElementById('calcResultBody');
+
+            const rows = quotaData
+                .filter(e => e.dailyMaxOutput && e.dailyMaxOutput > 0)
+                .map(entry => {
+                    const days = totalTokens / entry.dailyMaxOutput;
+                    const outputPerReq = entry.outputTokenLimit || 1;
+                    const numRequests = Math.ceil(totalTokens / outputPerReq);
+                    const time = formatTime(days);
+
+                    return `<tr>
+                        <td style="font-weight:600;">${escapeHtml(entry.displayName)}</td>
+                        <td class="num">${formatNumber(entry.dailyMaxOutput)}/天</td>
+                        <td class="num ${time.cls}">${time.text}</td>
+                        <td class="num">${numRequests.toLocaleString()}</td>
+                    </tr>`;
+                });
+
+            tbody.innerHTML = rows.join('');
+            resultsDiv.classList.add('show');
+        }
+
+        // Show account diagnosis
+        async function showAccountDiagnosis() {
+            const section = document.getElementById('accountSection');
+            const content = document.getElementById('accountContent');
+            const desc = document.getElementById('accountDesc');
+
+            desc.textContent = `${currentProvider?.icon || ''} ${currentProvider?.name || ''} 账户诊断`;
+            section.style.display = 'block';
+
+            let html = '';
+
+            // 1. Balance
+            const balInfo = await queryBalance();
+            if (balInfo && balInfo.balance != null) {
+                const sym = {CNY:'¥', USD:'$', EUR:'€'}[balInfo.currency] || (balInfo.currency + ' ');
+                const balStr = `${sym}${balInfo.balance.toFixed(2)}`;
+                if (balInfo.balance <= 0) {
+                    html += diagItem('fail', '✗', '账户余额', balStr, '余额为零！请前往平台充值后再使用');
+                } else if (balInfo.balance < 1) {
+                    html += diagItem('warn', '⚠', '账户余额', balStr, '余额较低，建议及时充值');
+                } else {
+                    html += diagItem('ok', '✓', '账户余额', balStr);
+                }
+            } else if (balInfo && balInfo.available != null) {
+                html += diagItem(balInfo.available ? 'ok' : 'fail',
+                    balInfo.available ? '✓' : '✗', '账户状态',
+                    balInfo.available ? '可用' : '不可用',
+                    balInfo.available ? '' : '请检查账户余额或状态');
+            } else {
+                html += diagItem('info', 'ℹ', '账户余额', '无法查询 (该平台可能不支持余额查询接口)');
+            }
+
+            // 2. Model availability summary
+            const testBtns = document.querySelectorAll('.btn-test-model');
+            const okCount = document.querySelectorAll('.btn-test-model.test-success').length;
+            const failCount = document.querySelectorAll('.btn-test-model.test-fail').length;
+            const total = okCount + failCount;
+
+            if (total > 0) {
+                if (okCount === 0) {
+                    html += diagItem('fail', '✗', '模型可用性', `0/${total} 可用`, '所有模型均不可用，通常是余额不足或密钥权限问题');
+                } else if (failCount > okCount) {
+                    html += diagItem('warn', '⚠', '模型可用性', `${okCount}/${total} 可用`, '较多模型不可用，可能是套餐限制或模型未开通');
+                } else {
+                    html += diagItem('ok', '✓', '模型可用性', `${okCount}/${total} 可用`);
+                }
+            }
+
+            // 3. Error analysis
+            const errorGroups = {};
+            document.querySelectorAll('.btn-test-model.test-fail').forEach(btn => {
+                const reason = btn.textContent.replace(/^✗\s*/, '').trim();
+                const modelName = (btn.dataset.model || '').replace('models/', '');
+                if (!errorGroups[reason]) errorGroups[reason] = [];
+                errorGroups[reason].push(modelName);
+            });
+
+            if (Object.keys(errorGroups).length > 0) {
+                html += '<div class="error-group"><h4>📋 错误原因分析</h4>';
+                const sorted = Object.entries(errorGroups).sort((a,b) => b[1].length - a[1].length);
+                for (const [reason, models] of sorted) {
+                    const examples = models.slice(0, 3).join(', ') + (models.length > 3 ? ` 等 ${models.length} 个模型` : '');
+                    html += `<div class="error-group-item"><span class="error-group-reason">${escapeHtml(reason)}</span><span class="error-group-models">${escapeHtml(examples)}</span></div>`;
+                }
+                html += '</div>';
+            }
+
+            content.innerHTML = html;
+        }
+
+        function diagItem(type, icon, label, value, hint) {
+            return `<div class="diag-item diag-${type}">
+                <span class="diag-icon">${icon}</span>
+                <span class="diag-label">${label}</span>
+                <div><span class="diag-value">${escapeHtml(String(value))}</span>
+                ${hint ? `<div class="diag-hint">${escapeHtml(hint)}</div>` : ''}</div>
+            </div>`;
+        }
+
+        // Show quota section when models are loaded
+        function showQuotaSection() {
+            const hasGenModels = allModels.some(m =>
+                (m.supportedGenerationMethods || []).includes('generateContent'));
+            if (hasGenModels) {
+                document.getElementById('quotaSection').classList.add('show');
+            }
+        }
     </script>
 </body>
 </html>
