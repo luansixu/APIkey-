@@ -2,29 +2,29 @@
 
 粘贴任意 API 密钥，自动识别服务商，检测所有可用模型并逐一验证可用性，分析配额吞吐量。
 
-## 快速开始（推荐）
+## 快速开始
 
-只需 3 步，复制粘贴即可运行：
+### Windows 用户（双击即用）
+
+1. 安装 [Python](https://www.python.org/downloads/)（安装时勾选 **Add Python to PATH**）
+2. [下载本项目](https://github.com/luansixu/APIkey-/archive/refs/heads/main.zip) 并解压
+3. 双击 **`启动.bat`**
+
+自动安装依赖、启动服务、打开浏览器，粘贴 API 密钥即可使用。
+
+### 命令行用户
 
 ```bash
 git clone https://github.com/luansixu/APIkey-.git
 cd APIkey-
 pip install -r requirements.txt
-```
 
-然后选择你喜欢的方式：
-
-```bash
-# 终端命令行（最快，推荐）
+# 终端命令行版
 python gemini_test.py
 
-# 本地网页版（图形界面，自动打开浏览器）
+# 本地网页版（自动打开浏览器）
 python gemini_test.py --web
 ```
-
-> Windows 用户如果 `python` 命令无效，请使用 `py` 代替。
-
-启动后粘贴任意 API 密钥，工具自动识别服务商并开始测试，无需额外配置。
 
 ## 支持的服务商
 
@@ -169,13 +169,14 @@ py gemini_test.py
 ## 文件说明
 
 ```
-├── gemini_test.py      # 终端命令行版 + 本地 Web 服务器
-├── index.html          # 浏览器图形界面
+├── 启动.bat              # Windows 一键启动器（双击即用）
+├── gemini_test.py        # 终端命令行版 + 本地 Web 服务器
+├── index.html            # 浏览器图形界面
 ├── api/
-│   └── proxy.js        # Vercel Edge Function (CORS 代理)
-├── vercel.json         # Vercel 部署配置
-├── requirements.txt    # Python 依赖
-└── README.md           # 使用说明
+│   └── proxy.js          # Vercel Edge Function (CORS 代理)
+├── vercel.json           # Vercel 部署配置
+├── requirements.txt      # Python 依赖
+└── README.md             # 使用说明
 ```
 
 ## 许可证
